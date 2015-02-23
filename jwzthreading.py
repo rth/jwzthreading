@@ -20,13 +20,13 @@ To use:
 Copyright (c) 2003-2010, A.M. Kuchling.
 
 This code is under a BSD-style license; see the LICENSE file for details.
-
 """
 
 import re
 from collections import deque
 
 __all__ = ['Message', 'make_message', 'thread']
+
 
 class Container:
     """Contains a tree of messages.
@@ -43,35 +43,28 @@ class Container:
       .parent : Container
         Parent container; may be None.
     """
-
-    #__slots__ = ['message', 'parent', 'children', 'id']
-    def __init__ (self):
+    def __init__(self):
         self.message = self.parent = None
         self.children = []
 
-    def __repr__ (self):
+    def __repr__(self):
         return '<%s %x: %r>' % (self.__class__.__name__, id(self),
                                 self.message)
 
-    def is_dummy (self):
+    def is_dummy(self):
         return self.message is None
 
-    def add_child (self, child):
-        ##print "Assigning: "
-        ##print_container(child, 0, True)
-        ##print "as children of: "
-        ##print_container(self, 0, True)
-        
+    def add_child(self, child):
         if child.parent:
             child.parent.remove_child(child)
         self.children.append(child)
         child.parent = self
 
-    def remove_child (self, child):
+    def remove_child(self, child):
         self.children.remove(child)
         child.parent = None
 
-    def has_descendant (self, ctr):
+    def has_descendant(self, ctr):
         """(Container): bool
 
         Returns true if 'ctr' is a descendant of this Container.
@@ -92,9 +85,10 @@ class Container:
                     stack.append(child)
         return False
 
+
 def uniq(alist):
     set = {}
-    return [set.setdefault(e,e) for e in alist if e not in set.keys()]
+    return [set.setdefault(e, e) for e in alist if e not in set.keys()]
 
 msgid_pat = re.compile('<([^>]+)>')
 restrip_pat = re.compile("""(
@@ -102,8 +96,10 @@ restrip_pat = re.compile("""(
 \s*)+
 """, re.I | re.VERBOSE)
 
-def make_message (msg):
+
+def make_message(msg):
     """(msg:rfc822.Message) : Message
+
     Create a Message object for threading purposes from an RFC822
     message.
     """
@@ -131,6 +127,7 @@ def make_message (msg):
 
     return new
 
+
 class Message (object):
     """Represents a message to be threaded.
 
@@ -143,26 +140,24 @@ class Message (object):
       List of message IDs from the In-Reply-To and References headers.
     .message : any
       Can contain information for the caller's use (e.g. an RFC-822 message object).
-
     """
-    __slots__ = ['message', 'message_id', 'references', 'subject']
-
     def __init__(self, msg=None):
         self.message = msg
         self.message_id = None
         self.references = []
         self.subject = None
 
-    def __repr__ (self):
+    def __repr__(self):
         return '<%s: %r>' % (self.__class__.__name__, self.message_id)
 
-def prune_container (container):
+
+def prune_container(container):
     """(container:Container) : [Container]
+
     Recursively prune a tree of containers, as described in step 4
     of the algorithm.  Returns a list of the children that should replace
     this container.
     """
-
     # Prune children, assembling a new list of children
     new_children = []
 
@@ -186,11 +181,11 @@ def prune_container (container):
     ##        print_container(ctr, 0, True)
 
     if (container.message is None and
-        len(container.children) == 0):
+            len(container.children) == 0):
         # 4.A: nuke empty containers
         return []
     elif (container.message is None and
-          (len(container.children)==1 or
+          (len(container.children) == 1 or
            container.parent is not None)):
         # 4.B: promote children
         L = container.children[:]
@@ -203,7 +198,7 @@ def prune_container (container):
         return [container]
 
 
-def thread (msglist):
+def thread(msglist):
     """([Message]) : {string:Container}
 
     The main threading function.  This takes a list of Message
@@ -212,7 +207,6 @@ def thread (msglist):
     list of subtrees, so callers can then sort children by date or
     poster or whatever.
     """
-
     id_table = {}
     for msg in msglist:
         # 1A
@@ -267,9 +261,15 @@ def thread (msglist):
     for container in root_set:
         assert container.parent == None
 
+<<<<<<< 1a77baff4b05ece3d4c54e0cd806b9f8e755f8df
     ##print 'before'
     ##for ctr in root_set:
     ##    print_container(ctr, 0, True)
+=======
+    # print 'before'
+    # for ctr in root_set:
+    # print_container(ctr)
+>>>>>>> trivial: Run code through autopep8
 
     new_root_set = []
     for container in root_set:
@@ -278,9 +278,15 @@ def thread (msglist):
 
     root_set = new_root_set
 
+<<<<<<< 1a77baff4b05ece3d4c54e0cd806b9f8e755f8df
     ##print '\n\nafter'
     ##for ctr in root_set:
     ##    print_container(ctr, 0, True)
+=======
+    # print '\n\nafter'
+    # for ctr in root_set:
+    # print_container(ctr)
+>>>>>>> trivial: Run code through autopep8
 
     # 5. Group root set by subject
     subject_table = {}
@@ -340,7 +346,8 @@ def thread (msglist):
 
 def print_container(ctr, depth=0, debug=0):
     import sys
-    sys.stdout.write(depth*' ')
+
+    sys.stdout.write(depth * ' ')
     if debug:
         # Printing the repr() is more useful for debugging
         sys.stdout.write(repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject))
@@ -349,7 +356,8 @@ def print_container(ctr, depth=0, debug=0):
 
     sys.stdout.write('\n')
     for c in ctr.children:
-        print_container(c, depth+1, debug)
+        print_container(c, depth + 1, debug)
+        print_container(c, depth + 1)
 
 
 def main():
