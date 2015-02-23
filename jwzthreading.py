@@ -22,8 +22,9 @@ Copyright (c) 2003-2010, A.M. Kuchling.
 This code is under a BSD-style license; see the LICENSE file for details.
 """
 
-import re
+from __future__ import print_function
 from collections import deque
+import re
 
 __all__ = ['Message', 'thread']
 
@@ -92,12 +93,14 @@ class Container(object):
         Returns:
             True if `ctr` is a descendant of `self`, else False.
         """
-        # To avoid recursing indefinitely, we'll do a depth-first search;
-        # 'seen' tracks the containers we've already seen, and 'stack'
-        # is a deque containing containers that we need to look at.
+        # To avoid recursing indefinitely, we'll do a depth-first
+        # search; 'seen' tracks the containers we've already seen,
+        # and 'stack' is a deque containing containers that we need
+        # to look at.
         stack = deque()
         stack.append(self)
         seen = set()
+
         while stack:
             node = stack.pop()
             if node is ctr:
@@ -106,6 +109,7 @@ class Container(object):
             for child in node.children:
                 if child not in seen:
                     stack.append(child)
+
         return False
 
 
@@ -156,8 +160,8 @@ class Message(object):
 #
 
 def uniq(alist):
-    set = {}
-    return [set.setdefault(e, e) for e in alist if e not in set.keys()]
+    result = {}
+    return [result.setdefault(e, e) for e in alist if e not in result]
 
 
 def prune_container(container):
@@ -176,44 +180,30 @@ def prune_container(container):
     # Prune children, assembling a new list of children
     new_children = []
 
-    ##old_children = container.children[:]
-
-    for ctr in container.children[:]:
-        L = prune_container(ctr)
-        new_children.extend(L)
+    for ctr in container.children[:]:  # copy the container.children list
+        pruned_child = prune_container(ctr)
+        new_children.extend(pruned_child)
         container.remove_child(ctr)
 
-    for c in new_children:
-        container.add_child(c)
+    for child in new_children:
+        container.add_child(child)
 
-    ##if new_children != old_children:
-    ##    print 'Children for ' + repr(container) + 'Changed'
-    ##    print 'OLD children:'
-    ##    for ctr in old_children:
-    ##        print_container(ctr, 0, True)
-    ##    print 'NEW children:'
-    ##    for ctr in container.children[:]:
-    ##        print_container(ctr, 0, True)
-
-    if (container.message is None and
-            len(container.children) == 0):
-        # 4.A: nuke empty containers
+    if container.message is None and not len(container.children):
+        # step 4 (a) - nuke empty containers
         return []
-    elif (container.message is None and
-          (len(container.children) == 1 or
-           container.parent is not None)):
-        # 4.B: promote children
-        L = container.children[:]
-        ##print "Promoting "+repr(len(container.children))+" children"
-        for c in L:
-            container.remove_child(c)
-        return L
+    elif container.message is None and (
+        len(container.children) == 1 or container.parent is not None):
+        # step 4 (b) - promote children
+        children = container.children[:]
+        for child in children:
+            container.remove_child(child)
+        return children
     else:
         # Leave this node in place
         return [container]
 
 
-def thread(msglist):
+def thread(messages):
     """Thread a list of mail items.
 
     Takes a list of Message objects, and returns a dictionary mapping
@@ -227,9 +217,11 @@ def thread(msglist):
     Returns:
         dict of containers, with subject as the key
     """
+    # step one
     id_table = {}
-    for msg in msglist:
-        # 1A
+
+    for msg in messages:
+        # step one (a)
         this_container = id_table.get(msg.message_id, None)
         if this_container is not None:
             this_container.message = msg
@@ -238,14 +230,13 @@ def thread(msglist):
             this_container.message = msg
             id_table[msg.message_id] = this_container
 
-        # 1B
+        # step one (b)
         prev = None
         for ref in msg.references:
             ## print "Processing reference for "+repr(msg.message_id)+": "+repr(ref)
             container = id_table.get(ref, None)
             if container is None:
                 container = Container()
-                container.message_id = ref
                 id_table[ref] = container
 
             if prev is not None:
@@ -270,55 +261,38 @@ def thread(msglist):
                 this_container.parent.remove_child(this_container)
         
 
-    # 2. Find root set
+    # step two - find root set
     root_set = [container for container in id_table.values()
                 if container.parent is None]
 
-    # 3. Delete id_table
+    # step three - delete id_table
     del id_table
 
-    # 4. Prune empty containers
+    # step four - prune empty containers
     for container in root_set:
         assert container.parent == None
 
-<<<<<<< 1a77baff4b05ece3d4c54e0cd806b9f8e755f8df
-    ##print 'before'
-    ##for ctr in root_set:
-    ##    print_container(ctr, 0, True)
-=======
-    # print 'before'
-    # for ctr in root_set:
-    # print_container(ctr)
->>>>>>> trivial: Run code through autopep8
-
     new_root_set = []
     for container in root_set:
-        L = prune_container(container)
-        new_root_set.extend(L)
+        new_container = prune_container(container)
+        new_root_set.extend(new_container)
 
     root_set = new_root_set
 
-<<<<<<< 1a77baff4b05ece3d4c54e0cd806b9f8e755f8df
-    ##print '\n\nafter'
-    ##for ctr in root_set:
-    ##    print_container(ctr, 0, True)
-=======
     # print '\n\nafter'
     # for ctr in root_set:
     # print_container(ctr)
->>>>>>> trivial: Run code through autopep8
 
-    # 5. Group root set by subject
+    # step five - group root set by subject
     subject_table = {}
     for container in root_set:
         if container.message:
             subj = container.message.subject
         else:
-            c = container.children[0]
             subj = container.children[0].message.subject
 
         subj = SUBJECT_RE.sub('', subj)
-        if subj == "":
+        if subj == '':
             continue
 
         existing = subject_table.get(subj, None)
@@ -330,7 +304,7 @@ def thread(msglist):
              len(existing.message.subject) > len(container.message.subject))):
             subject_table[subj] = container
 
-    # 5C
+    # step five (c)
     for container in root_set:
         if container.message:
             subj = container.message.subject
@@ -339,11 +313,13 @@ def thread(msglist):
 
         subj = SUBJECT_RE.sub('', subj)
         ctr = subject_table.get(subj)
+
         if ctr is None or ctr is container:
             continue
+
         if ctr.is_dummy() and container.is_dummy():
-            for c in ctr.children:
-                container.add_child(c)
+            for child in ctr.children:
+                container.add_child(child)
         elif ctr.is_dummy() or container.is_dummy():
             if ctr.is_dummy():
                 ctr.add_child(container)
@@ -366,43 +342,40 @@ def thread(msglist):
 
 def print_container(ctr, depth=0, debug=0):
     """Print summary of Thread to stdout."""
-    import sys
-
-    sys.stdout.write(depth * ' ')
     if debug:
-        # Printing the repr() is more useful for debugging
-        sys.stdout.write(repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject))
+        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject))
     else:
-        sys.stdout.write(repr(ctr.message and ctr.message.subject))
+        message = str(ctr.message and ctr.message.subject)
 
-    sys.stdout.write('\n')
-    for c in ctr.children:
-        print_container(c, depth + 1, debug)
-        print_container(c, depth + 1)
+    print(''.join(['> ' * depth, message]))
+
+    for child in ctr.children:
+        print_container(child, depth + 1, debug)
+        print_container(child, depth + 1)
 
 
 def main():
     import mailbox
 
-    print('Reading input file...')
-    f = open("mbox", 'rb')
-    mbox = mailbox.UnixMailbox(f)
     msglist = []
-    while 1:
-        msg = mbox.next()
-        if msg is None:
-            break
-        m = Message(msg)
-        msglist.append(m)
-    f.close()
+
+    print('Reading input file...')
+    with open('mbox', 'rb') as file_:
+        mbox = mailbox.UnixMailbox(file_)
+        while 1:
+            msg = mbox.next()
+            if msg is None:
+                break
+            parsed_msg = Message(msg)
+            msglist.append(parsed_msg)
 
     print('Threading...')
     subject_table = thread(msglist)
 
     # Output
-    L = subject_table.items()
-    L.sort()
-    for subj, container in L:
+    subjects = subject_table.items()
+    subjects.sort()
+    for _, container in subjects:
         print_container(container)
 
 if __name__ == "__main__":
