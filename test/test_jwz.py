@@ -51,7 +51,7 @@ class TestContainer(unittest.TestCase):
         parent = jwzthreading.Container()
         L = [parent]
 
-        for _ in xrange(50000):
+        for _ in range(50000):
             child = jwzthreading.Container()
             parent.add_child(child)
             L.append(child)

@@ -2,11 +2,8 @@ language: python
 sudo: False
 matrix:
     include:
+        - python: "3.5"
         - python: "2.7" 
-        #- python: "3.5"
-        #  env: SKLEARN="0.18.1"
-        #- python: "3.4" 
-        #  env: SKLEARN="0.18.1"
 
 # setup adapted from https://github.com/soft-matter/trackpy/blob/master/.travis.yml
 before_install:
@@ -19,12 +16,9 @@ before_install:
 
 install: 
     - conda install --yes nose python=${TRAVIS_PYTHON_VERSION}
-    - which python
     - python setup.py install
-    - pwd
 
 script: 
-    - which nosetests
     - nosetests -sv test
 
 #after_success:
