@@ -1,3 +1,8 @@
+jwzthreading
+============
+
+.. image:: https://travis-ci.org/FreeDiscovery/jwzthreading.svg?branch=master
+    :target: https://travis-ci.org/FreeDiscovery/jwzthreading
 
 This is an implementation of a fast and smart algorithm for threading
 mail messages, as described by Jamie Zawinski at
