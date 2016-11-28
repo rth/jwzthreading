@@ -343,7 +343,7 @@ def thread(messages):
 def print_container(ctr, depth=0, debug=0):
     """Print summary of Thread to stdout."""
     if debug:
-        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject))
+        message = repr(ctr) + ' ' + repr(ctr.message and ctr.message.subject)
     else:
         message = str(ctr.message and ctr.message.subject)
 
