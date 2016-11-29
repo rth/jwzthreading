@@ -53,3 +53,63 @@ def parse_mailman_gzfiles(filename, encoding='utf-8', headersonly=False):
         out.append(msg_obj)
     return out
 
+
+def parse_mailman_htmlthread(filename):
+    """ Parse a gzipped files with multiple concatenaged emails
+    that can be downloaded from mailman.
+
+    Parameters
+    ----------
+    filename : str
+      path to the filename
+
+    Returns
+    -------
+
+    response : list
+      a thread list
+    """
+    from lxml import etree
+    from .jwzthreading import Container
+    parser = etree.HTMLParser()
+    with open(filename, 'rt') as fh:
+        tree = etree.parse(fh, parser)
+
+    elements = filter(lambda x: x.tag == 'ul', tree.find('body'))
+
+    tree = list(elements)[-1].getchildren() # pick last <ul> element
+
+    class DummyMessage(object):
+        subject = None
+        id = None
+
+    def create_thread(root, parent_container=None):
+        """ Parse the html nested lists to produce the threading structure"""
+        #print(dir(root))
+        if root.tag != 'li':
+            raise ValueError('Element {} was not expected'.format(root))
+
+        container = Container()
+        for child in root.getchildren():
+            if child.tag == 'strong':
+                # url with to the actual email
+                a_el = child.getchildren()[0]
+                container.message = DummyMessage()
+                container.message.subject = a_el.text
+                container.message.id = int(a_el.get('name'))
+            elif child.tag == 'em':
+                pass  # email sender, ignore this line
+            elif child.tag == 'ul':
+                for nested_child in child.getchildren():
+                    create_thread(nested_child, parent_container=container)
+            else:
+                raise ValueError('Unexpected element {}'.format(child))
+        if parent_container is not None:
+            parent_container.add_child(container)
+
+        return container
+
+    threads = [create_thread(el) for el in tree]
+
+    return threads
+

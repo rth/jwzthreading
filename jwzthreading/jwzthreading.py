@@ -112,6 +112,14 @@ class Container(object):
 
         return False
 
+    @property
+    def size(self):
+        """Count the number of objects included in the container,
+        including itself"""
+
+        return 1 + sum([child.size for child in self.children])
+
+
 
 class Message(object):
     """Represents a message to be threaded.
