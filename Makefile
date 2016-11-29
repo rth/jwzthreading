@@ -1,4 +1,6 @@
+test:
+	nosetests -sv jwzthreading/tests
 
 cov:
-	coverage run test/test_jwz.py
-	coverage annotate -d /tmp/ jwzthreading.py
+	coverage run jwzthreading/tests/test_jwz.py
+	coverage annotate -d /tmp/ jwzthreading/jwzthreading.py

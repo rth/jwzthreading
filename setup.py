@@ -1,5 +1,7 @@
-
-from distutils import core
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 kw = {
     'name': 'jwzthreading',
@@ -20,4 +22,4 @@ messages, as described at http://www.jwz.org/doc/threading.html.''',
     ]
 }
 
-core.setup(**kw)
+setup(**kw)
