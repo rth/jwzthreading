@@ -25,10 +25,10 @@ install:
   - conda info -a
   # create a conda virtual environement 
   - "cd C:\\projects\\jwzthreading"
-  - "conda create -n jwz-env --yes nose python=%PYTHON_VERSION%"
+  - "conda create -n jwz-env --yes pytest python=%PYTHON_VERSION%"
   - activate jwz-env
   - python setup.py install
 
 test_script:
   - activate jwz-env # activate the virtualenv
-  - nosetests -sv jwzthreading/tests/
+  - py.test -sv jwzthreading/tests/
