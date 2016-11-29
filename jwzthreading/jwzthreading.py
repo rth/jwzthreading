@@ -23,7 +23,7 @@ This code is under a BSD-style license; see the LICENSE file for details.
 """
 
 from __future__ import print_function
-from collections import deque
+from collections import deque, OrderedDict
 import re
 
 __all__ = ['Message', 'thread']
@@ -213,16 +213,16 @@ def prune_container(container):
 def thread(messages):
     """Thread a list of mail items.
 
-    Takes a list of Message objects, and returns a dictionary mapping
-    subjects to Containers. Containers are trees, with the `children`
-    attribute containing a list of subtrees, so callers can then sort
-    children by date or poster or whatever.
+    Takes a list of Message objects, and returns a list of Containers.
+    Containers are trees, with the `children` attribute containing
+    a list of subtrees, so callers can then sort children by date
+    or poster or whatever.
 
     Arguments:
         messages ([Message]): List of Message itesms
 
     Returns:
-        dict of containers, with subject as the key
+        list of containers, sorted by date
     """
     # step one
     id_table = {}
@@ -291,7 +291,7 @@ def thread(messages):
     # print_container(ctr)
 
     # step five - group root set by subject
-    subject_table = {}
+    subject_table = OrderedDict()
     for container in root_set:
         if container.message:
             subj = container.message.subject
@@ -344,7 +344,9 @@ def thread(messages):
             new.add_child(container)
             subject_table[subj] = new
 
-    return subject_table
+    containers_list = list(subject_table.values())
+
+    return containers_list
 
 
 def print_container(ctr, depth=0, debug=0):
@@ -377,12 +379,10 @@ def main():
         msglist.append(parsed_msg)
 
     print('Threading...')
-    subject_table = thread(msglist)
+    threads = thread(msglist)
 
     print('Output...')
-    subjects = subject_table.items()
-    subjects = sorted(subjects)
-    for _, container in subjects:
+    for container in threads:
         print_container(container)
 
 if __name__ == "__main__":

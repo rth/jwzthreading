@@ -114,7 +114,8 @@ class TestThread(unittest.TestCase):
         """Thread a single message."""
         m = jwzthreading.Message(None)
         m.subject = m.message_id = 'Single'
-        self.assertEqual(jwzthreading.thread([m])['Single'].message, m)
+        d = jwzthreading.thread([m])
+        assert d[0].message == m
 
     def test_thread_unrelated(self):
         """Thread two unconnected messages."""
@@ -123,9 +124,9 @@ class TestThread(unittest.TestCase):
         m2 = jwzthreading.Message(None)
         m2.subject = m2.message_id = 'Second'
         d = jwzthreading.thread([m1, m2])
-        self.assertEqual(d['First'].message, m1)
-        self.assertEqual(d['Second'].children, [])
-        self.assertEqual(d['Second'].message, m2)
+        assert d[0].message == m1
+        assert d[1].children == []
+        assert d[1].message == m2
 
     def test_thread_two(self):
         """Thread two messages together."""
@@ -135,9 +136,9 @@ class TestThread(unittest.TestCase):
         m2.subject = m2.message_id = 'Second'
         m2.references = ['First']
         d = jwzthreading.thread([m1, m2])
-        self.assertEqual(d['First'].message, m1)
-        self.assertEqual(len(d['First'].children), 1)
-        self.assertEqual(d['First'].children[0].message, m2)
+        assert d[0].message == m1
+        assert len(d[0].children) == 1
+        assert d[0].children[0].message == m2
 
     def test_thread_two_reverse(self):
         "Thread two messages together, with the child message listed first."
@@ -147,9 +148,9 @@ class TestThread(unittest.TestCase):
         m2.subject = m2.message_id = 'Second'
         m2.references = ['First']
         d = jwzthreading.thread([m2, m1])
-        self.assertEqual(d['First'].message, m1)
-        self.assertEqual(len(d['First'].children), 1)
-        self.assertEqual(d['First'].children[0].message, m2)
+        assert d[0].message == m1
+        assert len(d[0].children) == 1
+        assert d[0].children[0].message == m2
 
     def test_thread_lying_message(self):
         "Thread three messages together, with other messages lying in their references."
@@ -169,13 +170,14 @@ class TestThread(unittest.TestCase):
         lying_after_m = jwzthreading.Message(None)
         lying_after_m.subject = lying_after_m.message_id = 'Lying after'
         #lying_after_m.references = ['Dummy parent','Third', 'Second', 'First']
-        d = jwzthreading.thread([dummy_parent_m, lying_before_m, m1, m2, m3, lying_after_m])
-        self.assertEqual(d['First'].message, m1)
-        self.assertEqual(len(d['First'].children), 1)
-        self.assertEqual(d['First'].children[0].message, m2)
-        self.assertEqual(len(d['First'].children[0].children), 1)
-        self.assertEqual(d['First'].children[0].children[0].message, m3)
-        
+        d = jwzthreading.thread([dummy_parent_m, lying_before_m,
+                                 m1, m2, m3, lying_after_m])
+        assert d[1].message == m1
+        assert len(d[1].children) == 1
+        assert d[1].children[0].message == m2
+        assert len(d[1].children[0].children) == 1
+        assert d[1].children[0].children[0].message == m3
+
     def test_thread_two_missing_parent(self):
         "Thread two messages, both children of a missing parent."
         m1 = jwzthreading.Message(None)
@@ -187,9 +189,9 @@ class TestThread(unittest.TestCase):
         m2.message_id = 'Second'
         m2.references = ['parent']
         d = jwzthreading.thread([m1, m2])
-        self.assertEqual(d['Child'].message, None)
-        self.assertEqual(len(d['Child'].children), 2)
-        self.assertEqual(d['Child'].children[0].message, m1)
+        assert d[0].message == None
+        assert len(d[0].children) == 2
+        assert d[0].children[0].message == m1
 
 
 if __name__ == "__main__":
