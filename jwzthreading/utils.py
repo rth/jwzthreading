@@ -70,7 +70,7 @@ def parse_mailman_htmlthread(filename):
       a thread list
     """
     from lxml import etree
-    from .jwzthreading import Container
+    from .jwzthreading import Container, Message
     parser = etree.HTMLParser()
     with open(filename, 'rt') as fh:
         tree = etree.parse(fh, parser)
@@ -89,14 +89,18 @@ def parse_mailman_htmlthread(filename):
         if root.tag != 'li':
             raise ValueError('Element {} was not expected'.format(root))
 
+        if len(root.getchildren()) == 0:
+            # this is a dummy element "<li>Possible follow-ups</li>"
+            return None
+
         container = Container()
         for child in root.getchildren():
             if child.tag == 'strong':
                 # url with to the actual email
                 a_el = child.getchildren()[0]
-                container.message = DummyMessage()
+                container.message = Message()
                 container.message.subject = a_el.text
-                container.message.id = int(a_el.get('name'))
+                container.message.message_id = int(a_el.get('name'))
             elif child.tag == 'em':
                 pass  # email sender, ignore this line
             elif child.tag == 'ul':

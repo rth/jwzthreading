@@ -16,8 +16,9 @@ BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, 'data/fedora-devel-mailman') 
 
 # Expected number of emails and threads
-N_JUNE2010_THREADS = 292
-N_JUNE2010_EMAILS  = 292
+N_EMAILS_JUNE2010 = 292
+N_THREADS_JUNE2010 = 63
+
 
 
 def test_parse_mailman_gzfiles():
@@ -25,7 +26,7 @@ def test_parse_mailman_gzfiles():
     msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
                          encoding='latin1', headersonly=True)
 
-    assert len(msglist) == N_JUNE2010_EMAILS
+    assert len(msglist) == N_EMAILS_JUNE2010
 
 def test_parse_mailman_htmlthread():
     """ Test that we can parse mailman html thread """
@@ -36,9 +37,12 @@ def test_parse_mailman_htmlthread():
     threads = parse_mailman_htmlthread(os.path.join(DATA_DIR,
                                       '2010-January_thread.html'))
 
-    assert sum([el.size for el in threads]) == N_JUNE2010_EMAILS
-
+    #assert len(threads) == N_THREADS_JUNE2010
     print('OK')
+    #for el in threads:
+    #    print(' - ({})'.format(el.size), el.message.subject)
+    assert sum([el.size for el in threads]) == N_EMAILS_JUNE2010
+
     #for el in threads:
     #    print_container(el)
 
@@ -47,24 +51,36 @@ def test_parse_mailman_htmlthread():
 
 
 def test_fedora():
-    """ Test threading on the fedora-devel mailing list data"""
-    # 2010-January https://www.redhat.com/archives/fedora-devel-list/
-    #import mailbox
+    """ Test threading on the fedora-devel mailing list data
+    from June 2010"""
+
+    try:
+        import lxml
+    except ImportError:
+        raise SkipTest
 
 
     msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
                          encoding='latin1', headersonly=True)
 
-    msglist_parsed = map(Message, msglist)
+    assert len(msglist) == N_EMAILS_JUNE2010
 
-    subject_table = thread(msglist_parsed)
+
+    threads_ref = parse_mailman_htmlthread(os.path.join(DATA_DIR,
+                                      '2010-January_thread.html'))
+
+
+    subject_table = thread([Message(el) for el in msglist])
 
     subjects = subject_table.items()
     subjects = sorted(subjects)
-    for idx, (_, container) in enumerate(subjects):
+    for _, container in enumerate(subjects):
         #print(idx)
         #print_container(container)
         pass
+    assert sum([el.size for _, el in subjects]) == N_EMAILS_JUNE2010
+
+    #assert len(subjects) == N_THREADS_JUNE2010
 
 
 
