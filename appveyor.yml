@@ -31,4 +31,4 @@ install:
 
 test_script:
   - activate jwz-env # activate the virtualenv
-  - nosetests -sv test/
+  - nosetests -sv jwzthreading/tests/
