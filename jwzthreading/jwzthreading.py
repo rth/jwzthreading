@@ -149,7 +149,7 @@ class Message(object):
         self.message = msg
         self.message_id = msg_id.group(1)
 
-        self.references = uniq(MSGID_RE.findall(msg.get('References', '')))
+        self.references = unique(MSGID_RE.findall(msg.get('References', '')))
         self.subject = msg.get('Subject', "No subject")
 
         # Get In-Reply-To: header and add it to references
@@ -166,7 +166,7 @@ class Message(object):
 # functions
 #
 
-def uniq(alist):
+def unique(alist):
     result = OrderedDict()
     return [result.setdefault(e, e) for e in alist if e not in result]
 
@@ -284,7 +284,9 @@ def thread(messages, group_by_subject=True):
                 if container.parent != None:
                     pass
                 # Don't add link if it would create a loop
-                elif container is this_container or container.has_descendant(prev) or prev.has_descendant(container):
+                elif container is this_container or \
+                     container.has_descendant(prev) or \
+                     prev.has_descendant(container):
                     pass
                 else:
                     prev.add_child(container)

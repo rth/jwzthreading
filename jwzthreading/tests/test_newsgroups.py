@@ -38,7 +38,6 @@ def test_parse_mailman_htmlthread():
                                       '2010-January_thread.html'))
 
     #assert len(threads) == N_THREADS_JUNE2010
-    print('OK')
     #for el in threads:
     #    print(' - ({})'.format(el.size), el.message.subject)
     assert sum([el.size for el in threads]) == N_EMAILS_JUNE2010

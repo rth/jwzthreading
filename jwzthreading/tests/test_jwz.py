@@ -10,7 +10,7 @@ from email import message_from_string
 import pytest
 
 from jwzthreading import (Message, Container,
-                          uniq, prune_container,
+                          unique, prune_container,
                           thread)
 
 
@@ -66,8 +66,8 @@ def test_deep_container():
     assert not L[0].has_descendant(Container())
 
 
-def test_uniq():
-    assert uniq((1, 2, 3, 1, 2, 3)) ==  [1, 2, 3]
+def test_unique():
+    assert unique((1, 2, 3, 1, 2, 3)) ==  [1, 2, 3]
 
 
 def test_email_make_message():
