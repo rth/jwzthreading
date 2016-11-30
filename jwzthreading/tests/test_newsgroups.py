@@ -19,6 +19,7 @@ DATA_DIR = os.path.join(BASE_DIR, 'data/fedora-devel-mailman')
 # Expected number of emails and threads
 N_EMAILS_JUNE2010 = 292
 N_THREADS_JUNE2010 = 63
+MAILMAN_MAX_DEPTH = 3
 
 
 
@@ -58,6 +59,14 @@ def test_fedora_June2010():
         import lxml
     except ImportError:
         raise SkipTest
+
+    try:
+        import numpy as np
+        from numpy.testing import assert_array_equal
+        NUMPY_PRESENT = True
+    except ImportError:
+        NUMPY_PRESENT = False
+
 
 
     msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
@@ -107,6 +116,8 @@ def test_fedora_June2010():
             subject = None
             message_idx = None
 
+        assert container_ref.message.message_idx == message_idx
+
         if message_idx == 55:
             # This is the "Common Lisp apps in Fedora" thread that has
             # uncorrectly threaded <Possible follow up>
@@ -114,7 +125,12 @@ def test_fedora_June2010():
 
         assert container_ref.size == container.size
 
-        assert container_ref.message.message_idx == message_idx
+        # check that we have the same messages in threads
+        if NUMPY_PRESENT:
+            assert_array_equal([el.message.message_idx for el in container_ref.flatten()],
+                         [el.message.message_idx for el in container.flatten()])
+            assert_array_equal([el.depth for el in container_ref.flatten()],
+                         np.fmin([el.depth for el in container.flatten()], MAILMAN_MAX_DEPTH))
     #        print(idx, '   [OK]')
     #        n_ok += 1 
     #        continue

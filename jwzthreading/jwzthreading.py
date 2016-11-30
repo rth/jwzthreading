@@ -119,15 +119,24 @@ class Container(object):
 
         return 1 + sum([child.size for child in self.children])
 
+    @property
+    def depth(self):
+        """Compute the current container depth"""
+
+        if self.parent is None:
+            return 0
+        else:
+            return 1 + self.parent.depth
+
     def flatten(self):
         """ Return a flatten version of the thread
 
         Returns
-          list [Messages]: a list of messages
+          list [Containers]: a list of messages
         """
         from itertools import chain
 
-        in_list = [[self.message]] + [child.flatten() for child in self.children]
+        in_list = [[self]] + [child.flatten() for child in self.children]
 
         return list(chain.from_iterable(in_list))
 
@@ -227,7 +236,7 @@ def prune_container(container):
         # Leave this node in place
         return [container]
 
-def sort_threads(threads, key='message_id', missing=-1, reverse=False):
+def sort_threads(threads, key='message_idx', missing=-1, reverse=False):
     """Sort threaded emails based on their root element
 
     Arguments:
@@ -235,7 +244,7 @@ def sort_threads(threads, key='message_id', missing=-1, reverse=False):
         group_by_subject (bool): Group root set by subject
                step 5 of the JWZ algorithm.
         key (str or None): optional sorting order for threads
-               Valid values are None, "message_id", "subject"
+               Valid values are "message_id", "subject", "message_idx" 
         missing (None): if the container has no message,
                replace it with this value
         reverse (book): reverse the order
@@ -253,7 +262,7 @@ def sort_threads(threads, key='message_id', missing=-1, reverse=False):
             val = missing
         return val
 
-    if key in ['message_id', 'subject']:
+    if key in ['message_id', 'subject', 'message_idx']:
         threads = sorted(threads, key=_sort_func)
     else:
         raise ValueError('Wrong input argument `sort_by`={}'.format(key))

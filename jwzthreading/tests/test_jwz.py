@@ -25,6 +25,7 @@ def test_container():
     assert c.parent is None
     assert not c.has_descendant(c2)
     assert len(c2.flatten()) == 1
+    assert c2.depth == 0
 
     # Add a child
     c3 = Container()
@@ -70,6 +71,7 @@ def test_deep_container():
 
     assert L[0].size == N + 1
     assert len(L[0].flatten()) == N + 1
+    assert L[-1].depth == N
 
 
 def test_unique():
