@@ -138,9 +138,14 @@ class Message(object):
     references = []
     subject = None
 
-    def __init__(self, msg=None):
+    message_idx = None  # internal message number in the mailbox
+
+    def __init__(self, msg=None, message_idx=None):
         if msg is None:
             return
+
+        if message_idx is not None:
+            self.message_idx = message_idx
 
         msg_id = MSGID_RE.search(msg.get('Message-ID', ''))
         if msg_id is None:
@@ -228,7 +233,7 @@ def sort_threads(threads, key='message_id', missing=-1, reverse=False):
     def _sort_func(el):
 
         if el.message is None:
-            val = -1
+            val = missing
         else:
             val = getattr(el.message, key)
         if val is None:
@@ -331,6 +336,7 @@ def thread(messages, group_by_subject=True):
     # print_container(ctr)
 
     if not group_by_subject:
+        # skip the following step
         return root_set
 
     # step five - group root set by subject

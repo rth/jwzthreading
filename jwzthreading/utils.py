@@ -79,10 +79,6 @@ def parse_mailman_htmlthread(filename):
 
     tree = list(elements)[-1].getchildren() # pick last <ul> element
 
-    class DummyMessage(object):
-        subject = None
-        id = None
-
     def create_thread(root, parent_container=None):
         """ Parse the html nested lists to produce the threading structure"""
         #print(dir(root))
@@ -100,7 +96,7 @@ def parse_mailman_htmlthread(filename):
                 a_el = child.getchildren()[0]
                 container.message = Message()
                 container.message.subject = a_el.text
-                container.message.message_id = int(a_el.get('name'))
+                container.message.message_idx = int(a_el.get('name'))
             elif child.tag == 'em':
                 pass  # email sender, ignore this line
             elif child.tag == 'ul':

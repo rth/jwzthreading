@@ -126,7 +126,6 @@ def test_sorting():
     assert d_s[0].message.message_id == 2
     assert d_s[1].message.message_id == 1
 
-
 def test_thread_single():
     """Thread a single message."""
     m = Message(None)
