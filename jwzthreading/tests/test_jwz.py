@@ -11,7 +11,7 @@ import pytest
 
 from jwzthreading import (Message, Container,
                           unique, prune_container,
-                          thread)
+                          thread, sort_threads)
 
 
 def test_container():
@@ -107,6 +107,24 @@ def test_prune_promote():
     c1.message = Message()
     p.add_child(c1)
     assert prune_container(p) == [c1]
+
+def test_sorting():
+    """Thread two unconnected messages."""
+    m1 = Message(None)
+    m1.subject = 'b'
+    m1.message_id = 1
+    m2 = Message(None)
+    m2.subject = 'a'
+    m2.message_id = 2
+    m3 = Message(None)
+    d = thread([m2, m1, m3], group_by_subject=False)
+
+    d_s = sort_threads(d, key='message_id', missing=-1)
+    assert d_s[0].message.message_id is None
+    assert d_s[1].message.message_id == 1
+    d_s = sort_threads(d, key='subject', missing='z')
+    assert d_s[0].message.message_id == 2
+    assert d_s[1].message.message_id == 1
 
 
 def test_thread_single():

@@ -209,16 +209,20 @@ def prune_container(container):
         # Leave this node in place
         return [container]
 
-def sort_threads(threads, sort_by='message_id', sort_missing=-1):
-    """Sort threaded emails
+def sort_threads(threads, key='message_id', missing=-1, reverse=False):
+    """Sort threaded emails based on their root element
+
     Arguments:
-        messages ([Message]): List of Message itesms
+        messages ([Container]): List of Container items
         group_by_subject (bool): Group root set by subject
                step 5 of the JWZ algorithm.
-        sort_by (str or None): optional sorting order for threads
+        key (str or None): optional sorting order for threads
                Valid values are None, "message_id", "subject"
-        sort_missing (None): if the container has no message,
+        missing (None): if the container has no message,
                replace it with this value
+        reverse (book): reverse the order
+    Returns:
+        list ([Container]): sorted list of containers
     """
 
     def _sort_func(el):
@@ -226,16 +230,15 @@ def sort_threads(threads, sort_by='message_id', sort_missing=-1):
         if el.message is None:
             val = -1
         else:
-            val = getattr(el.message, sort_by)
+            val = getattr(el.message, key)
+        if val is None:
+            val = missing
         return val
 
-    if sort_by is None:
-        pass
-    elif sort_by in ['message_id', 'subject']:
+    if key in ['message_id', 'subject']:
         threads = sorted(threads, key=_sort_func)
     else:
-        raise ValueError('Wrong input argument `sort_by`={}'.format(
-                         sort_by))
+        raise ValueError('Wrong input argument `sort_by`={}'.format(key))
     return threads
 
 
@@ -247,10 +250,12 @@ def thread(messages, group_by_subject=True):
     a list of subtrees, so callers can then sort children by date
     or poster or whatever.
 
-    Note: container ordering is not 
+    Note: container ordering is not guaranteed by default,
+    use the sort_threads function
+
 
     Arguments:
-        messages ([Message]): List of Message itesms
+        messages ([Message]): List of Message items
         group_by_subject (bool): Group root set by subject
                (optional) step 5 of the JWZ algorithm.
 
