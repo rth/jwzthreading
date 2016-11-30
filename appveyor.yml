@@ -25,7 +25,7 @@ install:
   - conda info -a
   # create a conda virtual environement 
   - "cd C:\\projects\\jwzthreading"
-  - "conda create -n jwz-env --yes pytest python=%PYTHON_VERSION%"
+  - "conda create -n jwz-env --yes pytest lxml python=%PYTHON_VERSION%"
   - activate jwz-env
   - python setup.py install
 

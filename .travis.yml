@@ -15,8 +15,8 @@ before_install:
     - conda info -a
 
 install: 
-    - conda install --yes pytest python=${TRAVIS_PYTHON_VERSION}
-    - python setup.py install
+    - conda install --yes pytest lxml python=${TRAVIS_PYTHON_VERSION}
+    - python setup.py develop
 
 script: 
     - make test
