@@ -24,6 +24,7 @@ def test_container():
     assert c.children == []
     assert c.parent is None
     assert not c.has_descendant(c2)
+    assert len(c2.flatten()) == 1
 
     # Add a child
     c3 = Container()
@@ -49,11 +50,13 @@ def test_container():
     assert c3.parent == c2
 
 def test_deep_container():
-    """Build a 50000-deep list of nested Containers."""
+    """Build a 100-deep list of nested Containers."""
+
+    N = 100
     parent = Container()
     L = [parent]
 
-    for _ in range(50000):
+    for _ in range(N):
         child = Container()
         parent.add_child(child)
         L.append(child)
@@ -64,6 +67,9 @@ def test_deep_container():
 
     # Test a search that fails
     assert not L[0].has_descendant(Container())
+
+    assert L[0].size == N + 1
+    assert len(L[0].flatten()) == N + 1
 
 
 def test_unique():

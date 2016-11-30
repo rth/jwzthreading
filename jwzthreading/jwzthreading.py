@@ -119,6 +119,19 @@ class Container(object):
 
         return 1 + sum([child.size for child in self.children])
 
+    def flatten(self):
+        """ Return a flatten version of the thread
+
+        Returns
+          list [Messages]: a list of messages
+        """
+        from itertools import chain
+
+        in_list = [[self.message]] + [child.flatten() for child in self.children]
+
+        return list(chain.from_iterable(in_list))
+
+
 
 
 class Message(object):
