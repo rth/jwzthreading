@@ -15,11 +15,11 @@ before_install:
     - conda info -a
 
 install: 
-    - conda install --yes nose python=${TRAVIS_PYTHON_VERSION}
-    - python setup.py install
+    - conda install --yes pytest lxml python=${TRAVIS_PYTHON_VERSION}
+    - python setup.py develop
 
 script: 
-    - nosetests -sv test
+    - make test
 
 #after_success:
 #    coveralls

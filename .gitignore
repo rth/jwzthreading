@@ -1,2 +1,7 @@
 build/
 *.pyc
+*egg-info/
+dist/
+*.swp
+.coverage
+.cache

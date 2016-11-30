@@ -17,13 +17,13 @@ To use:
   message.  You'll probably want to sort these children by date, subject,
   or some other criterion.
 
-Copyright (c) 2003-2010, A.M. Kuchling.
+Copyright (c) 2003-2016, A.M. Kuchling.
 
 This code is under a BSD-style license; see the LICENSE file for details.
 """
 
 from __future__ import print_function
-from collections import deque
+from collections import deque, OrderedDict
 import re
 
 __all__ = ['Message', 'thread']
@@ -112,6 +112,36 @@ class Container(object):
 
         return False
 
+    @property
+    def size(self):
+        """Count the number of objects included in the container,
+        including itself"""
+
+        return 1 + sum([child.size for child in self.children])
+
+    @property
+    def depth(self):
+        """Compute the current container depth"""
+
+        if self.parent is None:
+            return 0
+        else:
+            return 1 + self.parent.depth
+
+    def flatten(self):
+        """ Return a flatten version of the thread
+
+        Returns
+          list [Containers]: a list of messages
+        """
+        from itertools import chain
+
+        in_list = [[self]] + [child.flatten() for child in self.children]
+
+        return list(chain.from_iterable(in_list))
+
+
+
 
 class Message(object):
     """Represents a message to be threaded.
@@ -130,9 +160,14 @@ class Message(object):
     references = []
     subject = None
 
-    def __init__(self, msg=None):
+    message_idx = None  # internal message number in the mailbox
+
+    def __init__(self, msg=None, message_idx=None):
         if msg is None:
             return
+
+        if message_idx is not None:
+            self.message_idx = message_idx
 
         msg_id = MSGID_RE.search(msg.get('Message-ID', ''))
         if msg_id is None:
@@ -141,7 +176,7 @@ class Message(object):
         self.message = msg
         self.message_id = msg_id.group(1)
 
-        self.references = uniq(MSGID_RE.findall(msg.get('References', '')))
+        self.references = unique(MSGID_RE.findall(msg.get('References', '')))
         self.subject = msg.get('Subject', "No subject")
 
         # Get In-Reply-To: header and add it to references
@@ -154,13 +189,12 @@ class Message(object):
     def __repr__(self):
         return '<%s: %r>' % (self.__class__.__name__, self.message_id)
 
-
 #
 # functions
 #
 
-def uniq(alist):
-    result = {}
+def unique(alist):
+    result = OrderedDict()
     return [result.setdefault(e, e) for e in alist if e not in result]
 
 
@@ -202,23 +236,61 @@ def prune_container(container):
         # Leave this node in place
         return [container]
 
-
-def thread(messages):
-    """Thread a list of mail items.
-
-    Takes a list of Message objects, and returns a dictionary mapping
-    subjects to Containers. Containers are trees, with the `children`
-    attribute containing a list of subtrees, so callers can then sort
-    children by date or poster or whatever.
+def sort_threads(threads, key='message_idx', missing=-1, reverse=False):
+    """Sort threaded emails based on their root element
 
     Arguments:
-        messages ([Message]): List of Message itesms
+        messages ([Container]): List of Container items
+        group_by_subject (bool): Group root set by subject
+               step 5 of the JWZ algorithm.
+        key (str or None): optional sorting order for threads
+               Valid values are "message_id", "subject", "message_idx" 
+        missing (None): if the container has no message,
+               replace it with this value
+        reverse (book): reverse the order
+    Returns:
+        list ([Container]): sorted list of containers
+    """
+
+    def _sort_func(el):
+
+        if el.message is None:
+            val = missing
+        else:
+            val = getattr(el.message, key)
+        if val is None:
+            val = missing
+        return val
+
+    if key in ['message_id', 'subject', 'message_idx']:
+        threads = sorted(threads, key=_sort_func)
+    else:
+        raise ValueError('Wrong input argument `sort_by`={}'.format(key))
+    return threads
+
+
+def thread(messages, group_by_subject=True):
+    """Thread a list of mail items.
+
+    Takes a list of Message objects, and returns a list of Containers.
+    Containers are trees, with the `children` attribute containing
+    a list of subtrees, so callers can then sort children by date
+    or poster or whatever.
+
+    Note: container ordering is not guaranteed by default,
+    use the sort_threads function
+
+
+    Arguments:
+        messages ([Message]): List of Message items
+        group_by_subject (bool): Group root set by subject
+               (optional) step 5 of the JWZ algorithm.
 
     Returns:
-        dict of containers, with subject as the key
+        list of containers, sorted by date
     """
     # step one
-    id_table = {}
+    id_table = OrderedDict()
 
     for msg in messages:
         # step one (a)
@@ -241,10 +313,12 @@ def thread(messages):
 
             if prev is not None:
                 #If they are already linked, don't change the existing links.
-                if container.parent!=None:
+                if container.parent != None:
                     pass
                 # Don't add link if it would create a loop
-                elif container is this_container or container.has_descendant(prev) or prev.has_descendant(container):
+                elif container is this_container or \
+                     container.has_descendant(prev) or \
+                     prev.has_descendant(container):
                     pass
                 else:
                     prev.add_child(container)
@@ -283,8 +357,12 @@ def thread(messages):
     # for ctr in root_set:
     # print_container(ctr)
 
+    if not group_by_subject:
+        # skip the following step
+        return root_set
+
     # step five - group root set by subject
-    subject_table = {}
+    subject_table = OrderedDict()
     for container in root_set:
         if container.message:
             subj = container.message.subject
@@ -303,6 +381,7 @@ def thread(messages):
              container.message is not None and
              len(existing.message.subject) > len(container.message.subject))):
             subject_table[subj] = container
+
 
     # step five (c)
     for container in root_set:
@@ -337,7 +416,7 @@ def thread(messages):
             new.add_child(container)
             subject_table[subj] = new
 
-    return subject_table
+    return list(subject_table.values())
 
 
 def print_container(ctr, depth=0, debug=0):
@@ -370,12 +449,10 @@ def main():
         msglist.append(parsed_msg)
 
     print('Threading...')
-    subject_table = thread(msglist)
+    threads = thread(msglist)
 
     print('Output...')
-    subjects = subject_table.items()
-    subjects.sort()
-    for _, container in subjects:
+    for container in threads:
         print_container(container)
 
 if __name__ == "__main__":
