@@ -167,7 +167,7 @@ class Message(object):
 #
 
 def uniq(alist):
-    result = {}
+    result = OrderedDict()
     return [result.setdefault(e, e) for e in alist if e not in result]
 
 
@@ -209,8 +209,37 @@ def prune_container(container):
         # Leave this node in place
         return [container]
 
+def sort_threads(threads, sort_by='message_id', sort_missing=-1):
+    """Sort threaded emails
+    Arguments:
+        messages ([Message]): List of Message itesms
+        group_by_subject (bool): Group root set by subject
+               step 5 of the JWZ algorithm.
+        sort_by (str or None): optional sorting order for threads
+               Valid values are None, "message_id", "subject"
+        sort_missing (None): if the container has no message,
+               replace it with this value
+    """
 
-def thread(messages):
+    def _sort_func(el):
+
+        if el.message is None:
+            val = -1
+        else:
+            val = getattr(el.message, sort_by)
+        return val
+
+    if sort_by is None:
+        pass
+    elif sort_by in ['message_id', 'subject']:
+        threads = sorted(threads, key=_sort_func)
+    else:
+        raise ValueError('Wrong input argument `sort_by`={}'.format(
+                         sort_by))
+    return threads
+
+
+def thread(messages, group_by_subject=True):
     """Thread a list of mail items.
 
     Takes a list of Message objects, and returns a list of Containers.
@@ -218,14 +247,18 @@ def thread(messages):
     a list of subtrees, so callers can then sort children by date
     or poster or whatever.
 
+    Note: container ordering is not 
+
     Arguments:
         messages ([Message]): List of Message itesms
+        group_by_subject (bool): Group root set by subject
+               (optional) step 5 of the JWZ algorithm.
 
     Returns:
         list of containers, sorted by date
     """
     # step one
-    id_table = {}
+    id_table = OrderedDict()
 
     for msg in messages:
         # step one (a)
@@ -248,7 +281,7 @@ def thread(messages):
 
             if prev is not None:
                 #If they are already linked, don't change the existing links.
-                if container.parent!=None:
+                if container.parent != None:
                     pass
                 # Don't add link if it would create a loop
                 elif container is this_container or container.has_descendant(prev) or prev.has_descendant(container):
@@ -290,6 +323,9 @@ def thread(messages):
     # for ctr in root_set:
     # print_container(ctr)
 
+    if not group_by_subject:
+        return root_set
+
     # step five - group root set by subject
     subject_table = OrderedDict()
     for container in root_set:
@@ -310,6 +346,7 @@ def thread(messages):
              container.message is not None and
              len(existing.message.subject) > len(container.message.subject))):
             subject_table[subj] = container
+
 
     # step five (c)
     for container in root_set:
@@ -344,9 +381,7 @@ def thread(messages):
             new.add_child(container)
             subject_table[subj] = new
 
-    containers_list = list(subject_table.values())
-
-    return containers_list
+    return list(subject_table.values())
 
 
 def print_container(ctr, depth=0, debug=0):

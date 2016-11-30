@@ -4,195 +4,190 @@ Test script for jwzthreading.
 
 # pylint: disable=c0103,c0111,r0904
 
-import unittest
 import textwrap
 from email import message_from_string
 
-import jwzthreading
+import pytest
+
+from jwzthreading import (Message, Container,
+                          uniq, prune_container,
+                          thread)
 
 
-class TestContainer(unittest.TestCase):
-    def test_container(self):
-        """Test linking of containers."""
-        c = jwzthreading.Container()
-        repr(c)
+def test_container():
+    """Test linking of containers."""
+    c = Container()
+    repr(c)
 
-        c2 = jwzthreading.Container()
-        self.assertTrue(c.is_dummy())
-        self.assertEquals(c.children, [])
-        self.assertEquals(c.parent, None)
-        self.assertFalse(c.has_descendant(c2))
+    c2 = Container()
+    assert c.is_dummy()
+    assert c.children == []
+    assert c.parent is None
+    assert not c.has_descendant(c2)
 
-        # Add a child
-        c3 = jwzthreading.Container()
-        c.add_child(c2)
-        c2.add_child(c3)
-        self.assertEquals(c.children, [c2])
-        self.assertEquals(c2.parent, c)
-        self.assertTrue(c.has_descendant(c2))
-        self.assertTrue(c.has_descendant(c3))
-        self.assertTrue(c.has_descendant(c))
+    # Add a child
+    c3 = Container()
+    c.add_child(c2)
+    c2.add_child(c3)
+    assert c.children ==[c2] 
+    assert c2.parent == c
+    assert c.has_descendant(c2)
+    assert c.has_descendant(c3)
+    assert c.has_descendant(c)
 
-        # Remove a child
-        c.remove_child(c2)
-        self.assertEquals(c.children, [])
-        self.assertEquals(c2.parent, None)
-        self.assertFalse(c.has_descendant(c3))
-        self.assertTrue(c2.has_descendant(c3))
+    # Remove a child
+    c.remove_child(c2)
+    assert c.children == []
+    assert c2.parent is None
+    assert not c.has_descendant(c3)
+    assert c2.has_descendant(c3)
 
-        # Add child of one container to another
-        c3 = jwzthreading.Container()
-        c.add_child(c3)
-        c2.add_child(c3)
-        self.assertEquals(c3.parent, c2)
+    # Add child of one container to another
+    c3 = Container()
+    c.add_child(c3)
+    c2.add_child(c3)
+    assert c3.parent == c2
 
-    def test_deep_container(self):
-        """Build a 50000-deep list of nested Containers."""
-        parent = jwzthreading.Container()
-        L = [parent]
+def test_deep_container():
+    """Build a 50000-deep list of nested Containers."""
+    parent = Container()
+    L = [parent]
 
-        for _ in range(50000):
-            child = jwzthreading.Container()
-            parent.add_child(child)
-            L.append(child)
-            parent = child
+    for _ in range(50000):
+        child = Container()
+        parent.add_child(child)
+        L.append(child)
+        parent = child
 
-        # Test finding the last child
-        self.assertTrue(L[0].has_descendant(L[-1]))
+    # Test finding the last child
+    assert L[0].has_descendant(L[-1])
 
-        # Test a search that fails
-        self.assertFalse(L[0].has_descendant(jwzthreading.Container()))
-
-
-class TestUniq(unittest.TestCase):
-    def test_uniq(self):
-        self.assertEquals(jwzthreading.uniq((1, 2, 3, 1, 2, 3)), [1, 2, 3])
+    # Test a search that fails
+    assert not L[0].has_descendant(Container())
 
 
-class TestMessage(unittest.TestCase):
-    def test_email_make_message(self):
-        text = """\
-            Subject: random
-
-            Body."""
-        msg = message_from_string(textwrap.dedent(text))
-        self.assertRaises(ValueError, jwzthreading.Message, msg)
-
-    def test_basic_message(self):
-        text = """\
-            Subject: random
-            Message-ID: <message1>
-            References: <ref1> <ref2> <ref1>
-            In-Reply-To: <reply>
-
-            Body."""
-        msg = message_from_string(textwrap.dedent(text))
-        m = jwzthreading.Message(msg)
-        self.assertTrue(repr(m))
-        self.assertEquals(m.subject, 'random')
-        self.assertEquals(sorted(m.references), ['ref1', 'ref2', 'reply'])
-
-        # Verify that repr() works
-        repr(m)
+def test_uniq():
+    assert uniq((1, 2, 3, 1, 2, 3)) ==  [1, 2, 3]
 
 
-class TestPrune(unittest.TestCase):
-    def test_prune_empty(self):
-        c = jwzthreading.Container()
-        self.assertEquals(jwzthreading.prune_container(c), [])
+def test_email_make_message():
+    text = """\
+        Subject: random
 
-    def test_prune_promote(self):
-        p = jwzthreading.Container()
-        c1 = jwzthreading.Container()
-        c1.message = jwzthreading.Message()
-        p.add_child(c1)
-        self.assertEquals(jwzthreading.prune_container(p), [c1])
+        Body."""
+    msg = message_from_string(textwrap.dedent(text))
+    with pytest.raises(ValueError):
+        Message(msg)
 
+def test_basic_message():
+    text = """\
+        Subject: random
+        Message-ID: <message1>
+        References: <ref1> <ref2> <ref1>
+        In-Reply-To: <reply>
 
-class TestThread(unittest.TestCase):
-    def test_thread_single(self):
-        """Thread a single message."""
-        m = jwzthreading.Message(None)
-        m.subject = m.message_id = 'Single'
-        d = jwzthreading.thread([m])
-        assert d[0].message == m
+        Body."""
+    msg = message_from_string(textwrap.dedent(text))
+    m = Message(msg)
+    assert repr(m)
+    assert m.subject == 'random'
+    assert sorted(m.references) == ['ref1', 'ref2', 'reply']
 
-    def test_thread_unrelated(self):
-        """Thread two unconnected messages."""
-        m1 = jwzthreading.Message(None)
-        m1.subject = m1.message_id = 'First'
-        m2 = jwzthreading.Message(None)
-        m2.subject = m2.message_id = 'Second'
-        d = jwzthreading.thread([m1, m2])
-        assert d[0].message == m1
-        assert d[1].children == []
-        assert d[1].message == m2
-
-    def test_thread_two(self):
-        """Thread two messages together."""
-        m1 = jwzthreading.Message(None)
-        m1.subject = m1.message_id = 'First'
-        m2 = jwzthreading.Message(None)
-        m2.subject = m2.message_id = 'Second'
-        m2.references = ['First']
-        d = jwzthreading.thread([m1, m2])
-        assert d[0].message == m1
-        assert len(d[0].children) == 1
-        assert d[0].children[0].message == m2
-
-    def test_thread_two_reverse(self):
-        "Thread two messages together, with the child message listed first."
-        m1 = jwzthreading.Message(None)
-        m1.subject = m1.message_id = 'First'
-        m2 = jwzthreading.Message(None)
-        m2.subject = m2.message_id = 'Second'
-        m2.references = ['First']
-        d = jwzthreading.thread([m2, m1])
-        assert d[0].message == m1
-        assert len(d[0].children) == 1
-        assert d[0].children[0].message == m2
-
-    def test_thread_lying_message(self):
-        "Thread three messages together, with other messages lying in their references."
-        dummy_parent_m = jwzthreading.Message(None)
-        dummy_parent_m.subject = dummy_parent_m.message_id = 'Dummy parent'
-        lying_before_m = jwzthreading.Message(None)
-        lying_before_m.subject = lying_before_m.message_id = 'Lying before'
-        lying_before_m.references = ['Dummy parent', 'Second', 'First', 'Third']
-        m1 = jwzthreading.Message(None)
-        m1.subject = m1.message_id = 'First'
-        m2 = jwzthreading.Message(None)
-        m2.subject = m2.message_id = 'Second'
-        m2.references = ['First']
-        m3 = jwzthreading.Message(None)
-        m3.subject = m3.message_id = 'Third'
-        m3.references = ['First', 'Second']
-        lying_after_m = jwzthreading.Message(None)
-        lying_after_m.subject = lying_after_m.message_id = 'Lying after'
-        #lying_after_m.references = ['Dummy parent','Third', 'Second', 'First']
-        d = jwzthreading.thread([dummy_parent_m, lying_before_m,
-                                 m1, m2, m3, lying_after_m])
-        assert d[1].message == m1
-        assert len(d[1].children) == 1
-        assert d[1].children[0].message == m2
-        assert len(d[1].children[0].children) == 1
-        assert d[1].children[0].children[0].message == m3
-
-    def test_thread_two_missing_parent(self):
-        "Thread two messages, both children of a missing parent."
-        m1 = jwzthreading.Message(None)
-        m1.subject = 'Child'
-        m1.message_id = 'First'
-        m1.references = ['parent']
-        m2 = jwzthreading.Message(None)
-        m2.subject = 'Child'
-        m2.message_id = 'Second'
-        m2.references = ['parent']
-        d = jwzthreading.thread([m1, m2])
-        assert d[0].message == None
-        assert len(d[0].children) == 2
-        assert d[0].children[0].message == m1
+    # Verify that repr() works
+    repr(m)
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_prune_empty():
+    c = Container()
+    assert prune_container(c) == []
+
+def test_prune_promote():
+    p = Container()
+    c1 = Container()
+    c1.message = Message()
+    p.add_child(c1)
+    assert prune_container(p) == [c1]
+
+
+def test_thread_single():
+    """Thread a single message."""
+    m = Message(None)
+    m.subject = m.message_id = 'Single'
+    d = thread([m])
+    assert d[0].message == m
+
+def test_thread_unrelated():
+    """Thread two unconnected messages."""
+    m1 = Message(None)
+    m1.subject = m1.message_id = 'First'
+    m2 = Message(None)
+    m2.subject = m2.message_id = 'Second'
+    d = thread([m1, m2], group_by_subject=False)
+    assert d[0].message == m1
+    assert d[1].children == []
+    assert d[1].message == m2
+
+def test_thread_two():
+    """Thread two messages together."""
+    m1 = Message(None)
+    m1.subject = m1.message_id = 'First'
+    m2 = Message(None)
+    m2.subject = m2.message_id = 'Second'
+    m2.references = ['First']
+    d = thread([m1, m2])
+    assert d[0].message == m1
+    assert len(d[0].children) == 1
+    assert d[0].children[0].message == m2
+
+def test_thread_two_reverse():
+    "Thread two messages together, with the child message listed first."
+    m1 = Message(None)
+    m1.subject = m1.message_id = 'First'
+    m2 = Message(None)
+    m2.subject = m2.message_id = 'Second'
+    m2.references = ['First']
+    d = thread([m2, m1], group_by_subject=False)
+    assert d[0].message == m1
+    assert len(d[0].children) == 1
+    assert d[0].children[0].message == m2
+
+def test_thread_lying_message():
+    "Thread three messages together, with other messages lying in their references."
+    dummy_parent_m = Message(None)
+    dummy_parent_m.subject = dummy_parent_m.message_id = 'Dummy parent'
+    lying_before_m = Message(None)
+    lying_before_m.subject = lying_before_m.message_id = 'Lying before'
+    lying_before_m.references = ['Dummy parent', 'Second', 'First', 'Third']
+    m1 = Message(None)
+    m1.subject = m1.message_id = 'First'
+    m2 = Message(None)
+    m2.subject = m2.message_id = 'Second'
+    m2.references = ['First']
+    m3 = Message(None)
+    m3.subject = m3.message_id = 'Third'
+    m3.references = ['First', 'Second']
+    lying_after_m = Message(None)
+    lying_after_m.subject = lying_after_m.message_id = 'Lying after'
+    #lying_after_m.references = ['Dummy parent','Third', 'Second', 'First']
+    d = thread([dummy_parent_m, lying_before_m,
+                m1, m2, m3, lying_after_m], group_by_subject=False)
+    assert d[1].message == m1
+    assert len(d[1].children) == 1
+    assert d[1].children[0].message == m2
+    assert len(d[1].children[0].children) == 1
+    assert d[1].children[0].children[0].message == m3
+
+def test_thread_two_missing_parent():
+    "Thread two messages, both children of a missing parent."
+    m1 = Message(None)
+    m1.subject = 'Child'
+    m1.message_id = 'First'
+    m1.references = ['parent']
+    m2 = Message(None)
+    m2.subject = 'Child'
+    m2.message_id = 'Second'
+    m2.references = ['parent']
+    d = thread([m1, m2])
+    assert d[0].message == None
+    assert len(d[0].children) == 2
+    assert d[0].children[0].message == m1
