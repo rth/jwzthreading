@@ -71,8 +71,15 @@ def parse_mailman_htmlthread(filename):
     """
     from lxml import etree
     from .jwzthreading import Container, Message
+
+    if filename.endswith('.gz'):
+        import gzip
+        fopen = gzip.open
+    else:
+        fopen = open
+
     parser = etree.HTMLParser()
-    with open(filename, 'rt') as fh:
+    with fopen(filename, 'rt') as fh:
         tree = etree.parse(fh, parser)
 
     elements = filter(lambda x: x.tag == 'ul', tree.find('body'))

@@ -37,7 +37,7 @@ def test_parse_mailman_htmlthread():
     except ImportError:
         raise SkipTest
     threads = parse_mailman_htmlthread(os.path.join(DATA_DIR,
-                                      '2010-January_thread.html'))
+                                      '2010-January_thread.html.gz'))
 
     #assert len(threads) == N_THREADS_JUNE2010
     #for el in threads:
@@ -76,7 +76,7 @@ def test_fedora_June2010():
 
 
     threads_ref = parse_mailman_htmlthread(os.path.join(DATA_DIR,
-                                      '2010-January_thread.html'))
+                                      '2010-January_thread.html.gz'))
     threads_ref = sort_threads(threads_ref, key='subject', missing='Z')
 
 
