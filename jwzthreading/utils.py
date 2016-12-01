@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 
 
 
-def parse_mailman_gzfiles(filename, encoding='utf-8', headersonly=False):
+def parse_mailbox(filename, encoding='utf-8', headersonly=False):
     """ Parse a gzipped files with multiple concatenaged emails
     that can be downloaded from mailman.
     
@@ -28,12 +28,17 @@ def parse_mailman_gzfiles(filename, encoding='utf-8', headersonly=False):
     """
 
     from email.parser import Parser
-    import gzip
     import sys
     mailbox = []
     container = []
 
-    with gzip.open(filename, 'rb') as fh:
+    if filename.endswith('.gz'):
+        import gzip
+        fopen = gzip.open
+    else:
+        fopen = open
+
+    with fopen(filename, 'rb') as fh:
         for idx, line in enumerate(fh):
             if encoding != 'utf-8':
                 line = line.decode(encoding)

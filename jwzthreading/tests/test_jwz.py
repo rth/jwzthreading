@@ -87,7 +87,8 @@ def test_email_make_message():
     with pytest.raises(ValueError):
         Message(msg)
 
-def test_basic_message():
+@pytest.mark.parametrize('decode_header,', [False, True])
+def test_basic_message(decode_header):
     text = """\
         Subject: random
         Message-ID: <message1>
@@ -96,7 +97,7 @@ def test_basic_message():
 
         Body."""
     msg = message_from_string(textwrap.dedent(text))
-    m = Message(msg)
+    m = Message(msg, decode_header=decode_header)
     assert repr(m)
     assert m.subject == 'random'
     assert sorted(m.references) == ['ref1', 'ref2', 'reply']
@@ -104,6 +105,19 @@ def test_basic_message():
     # Verify that repr() works
     repr(m)
 
+def test_encoded_message():
+    text = """\
+        Subject: =?UTF-8?B?0L/QtdGA0LXQutC70LDQtA==?=
+        Message-ID: <message1>
+        References: <ref1> <ref2> <ref1>
+        In-Reply-To: <reply>
+
+        Body."""
+    msg = message_from_string(textwrap.dedent(text))
+    m = Message(msg, decode_header=True)
+    assert repr(m)
+    # make sure that we can decode a UTF8 encoded subject
+    assert m.subject == 'переклад'
 
 def test_prune_empty():
     c = Container()

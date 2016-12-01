@@ -10,7 +10,7 @@ from unittest import SkipTest
 
 from jwzthreading import (Message, thread, print_container,
                           sort_threads)
-from jwzthreading.utils import (parse_mailman_gzfiles,
+from jwzthreading.utils import (parse_mailbox,
                                 parse_mailman_htmlthread)
 
 BASE_DIR = os.path.dirname(__file__)
@@ -23,9 +23,9 @@ MAILMAN_MAX_DEPTH = 3
 
 
 
-def test_parse_mailman_gzfiles():
+def test_parse_mailbox():
     """ Test that we can parse mailman files """
-    msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
+    msglist = parse_mailbox(os.path.join(DATA_DIR, '2010-January.txt.gz'),
                          encoding='latin1', headersonly=True)
 
     assert len(msglist) == N_EMAILS_JUNE2010
@@ -69,7 +69,7 @@ def test_fedora_June2010():
 
 
 
-    msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
+    msglist = parse_mailbox(os.path.join(DATA_DIR, '2010-January.txt.gz'),
                          encoding='latin1', headersonly=True)
 
     assert len(msglist) == N_EMAILS_JUNE2010
