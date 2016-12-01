@@ -4,12 +4,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+import re
 
+MAILBOX_DELIMITER = '^From .*\d\d \d\d\d\d$'
 
 
 def parse_mailbox(filename, encoding='utf-8', headersonly=False):
     """ Parse a gzipped files with multiple concatenaged emails
-    that can be downloaded from mailman.
+    that can be found in a mailbox
     
     Parameters
     ----------
@@ -29,6 +31,8 @@ def parse_mailbox(filename, encoding='utf-8', headersonly=False):
 
     from email.parser import Parser
     import sys
+    import re
+
     mailbox = []
     container = []
 
@@ -40,9 +44,9 @@ def parse_mailbox(filename, encoding='utf-8', headersonly=False):
 
     with fopen(filename, 'rb') as fh:
         for idx, line in enumerate(fh):
-            if encoding != 'utf-8':
-                line = line.decode(encoding)
-            if line.startswith('From ') and '@' in line:
+            line = line.decode(encoding)
+            #if line.startswith('From ') and '@' in line:
+            if re.match(MAILBOX_DELIMITER, line):
                 if container:
                     mailbox.append(''.join(container))
                 container = []

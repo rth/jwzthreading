@@ -11,7 +11,8 @@ from unittest import SkipTest
 from jwzthreading import (Message, thread, print_container,
                           sort_threads)
 from jwzthreading.utils import (parse_mailbox,
-                                parse_mailman_htmlthread)
+                                parse_mailman_htmlthread,
+                                MAILBOX_DELIMITER)
 
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, 'data/fedora-devel-mailman') 
@@ -48,7 +49,13 @@ def test_parse_mailman_htmlthread():
     #    print_container(el)
 
 
+def test_mailbox_delimiter():
+    import re
+    examples = ['From jonathan.underwood@gmail.com Thu Jan  7 12:55:58 2010',
+                'From - Thu Sep  3 12:58:15 2015']
 
+    for line in examples:
+        assert re.match(MAILBOX_DELIMITER, line)
 
 
 def test_fedora_June2010():

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """jwzthreading.py
 
 Contains an implementation of an algorithm for threading mail
@@ -25,6 +27,7 @@ This code is under a BSD-style license; see the LICENSE file for details.
 from __future__ import print_function
 from collections import deque, OrderedDict
 import re
+import sys
 
 __all__ = ['Message', 'thread']
 
@@ -182,14 +185,15 @@ class Message(object):
             from email.header import decode_header
             subject, subject_encoding = decode_header(subject)[0]
             if isinstance(subject, bytes) and subject_encoding is not None:
-                if subject_encoding == 'unknown-8bit':
-                    try:
-                        subject = subject.decode('utf-8')
-                    except:
-                        pass
+                if sys.version_info > (3, 0):
+                    if subject_encoding == 'unknown-8bit':
+                        try:
+                            subject = subject.decode('utf-8')
+                        except:
+                            pass
 
-                else:
-                    subject = subject.decode(subject_encoding)
+                    else:
+                        subject = subject.decode(subject_encoding)
 
         self.subject = subject
 
