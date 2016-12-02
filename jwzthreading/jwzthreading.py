@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """jwzthreading.py
 
 Contains an implementation of an algorithm for threading mail
@@ -25,6 +27,7 @@ This code is under a BSD-style license; see the LICENSE file for details.
 from __future__ import print_function
 from collections import deque, OrderedDict
 import re
+import sys
 
 __all__ = ['Message', 'thread']
 
@@ -162,7 +165,7 @@ class Message(object):
 
     message_idx = None  # internal message number in the mailbox
 
-    def __init__(self, msg=None, message_idx=None):
+    def __init__(self, msg=None, message_idx=None, decode_header=False):
         if msg is None:
             return
 
@@ -177,7 +180,22 @@ class Message(object):
         self.message_id = msg_id.group(1)
 
         self.references = unique(MSGID_RE.findall(msg.get('References', '')))
-        self.subject = msg.get('Subject', "No subject")
+        subject = msg.get('Subject', "No subject")
+        if decode_header:
+            from email.header import decode_header
+            subject, subject_encoding = decode_header(subject)[0]
+            if isinstance(subject, bytes) and subject_encoding is not None:
+                if sys.version_info > (3, 0):
+                    if subject_encoding == 'unknown-8bit':
+                        try:
+                            subject = subject.decode('utf-8')
+                        except:
+                            pass
+
+                    else:
+                        subject = subject.decode(subject_encoding)
+
+        self.subject = subject
 
         # Get In-Reply-To: header and add it to references
         msg_id = MSGID_RE.search(msg.get('In-Reply-To', ''))

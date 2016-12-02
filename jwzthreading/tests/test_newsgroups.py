@@ -10,8 +10,9 @@ from unittest import SkipTest
 
 from jwzthreading import (Message, thread, print_container,
                           sort_threads)
-from jwzthreading.utils import (parse_mailman_gzfiles,
-                                parse_mailman_htmlthread)
+from jwzthreading.utils import (parse_mailbox,
+                                parse_mailman_htmlthread,
+                                MAILBOX_DELIMITER)
 
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, 'data/fedora-devel-mailman') 
@@ -23,9 +24,9 @@ MAILMAN_MAX_DEPTH = 3
 
 
 
-def test_parse_mailman_gzfiles():
+def test_parse_mailbox():
     """ Test that we can parse mailman files """
-    msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
+    msglist = parse_mailbox(os.path.join(DATA_DIR, '2010-January.txt.gz'),
                          encoding='latin1', headersonly=True)
 
     assert len(msglist) == N_EMAILS_JUNE2010
@@ -48,7 +49,13 @@ def test_parse_mailman_htmlthread():
     #    print_container(el)
 
 
+def test_mailbox_delimiter():
+    import re
+    examples = ['From jonathan.underwood@gmail.com Thu Jan  7 12:55:58 2010',
+                'From - Thu Sep  3 12:58:15 2015']
 
+    for line in examples:
+        assert re.match(MAILBOX_DELIMITER, line)
 
 
 def test_fedora_June2010():
@@ -69,7 +76,7 @@ def test_fedora_June2010():
 
 
 
-    msglist = parse_mailman_gzfiles(os.path.join(DATA_DIR, '2010-January.txt.gz'),
+    msglist = parse_mailbox(os.path.join(DATA_DIR, '2010-January.txt.gz'),
                          encoding='latin1', headersonly=True)
 
     assert len(msglist) == N_EMAILS_JUNE2010
