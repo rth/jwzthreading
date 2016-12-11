@@ -4,7 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import re
+
+import os
+import sys
 
 MAILBOX_DELIMITER = '^From .*\d\d \d\d\d\d$'
 
@@ -41,6 +43,7 @@ def parse_mailbox(filename, encoding='utf-8', headersonly=False):
         fopen = gzip.open
     else:
         fopen = open
+
 
     with fopen(filename, 'rb') as fh:
         for idx, line in enumerate(fh):
@@ -88,7 +91,11 @@ def parse_mailman_htmlthread(filename):
         fopen = open
 
     parser = etree.HTMLParser()
-    with fopen(filename, 'rt') as fh:
+    if os.name == 'nt' and sys.version_info < (3, 0):
+        fmask = 'r'
+    else:
+        fmask = 'rt'
+    with fopen(filename, fmask) as fh:
         tree = etree.parse(fh, parser)
 
     elements = filter(lambda x: x.tag == 'ul', tree.find('body'))
