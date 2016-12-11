@@ -10,7 +10,7 @@ kw = {
     'long_description' : '''Contains an implementation of an algorithm for threading mail
 messages, as described at http://www.jwz.org/doc/threading.html.''',
     'author': "A.M. Kuchling et al",
-    'py_modules': ['jwzthreading'],
+    'packages': ['jwzthreading'],
     'classifiers': [
             'Development Status :: 3 - Beta',
             'Intended Audience :: Developers',

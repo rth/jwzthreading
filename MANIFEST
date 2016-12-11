@@ -1,7 +1,6 @@
 CHANGES.txt
-jwzthreading.py
+recursive-include jwzthreading *.py
 LICENSE
 MANIFEST
-README
+README.rst
 setup.py
-test/test_jwz.py

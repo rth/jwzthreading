@@ -143,6 +143,20 @@ class Container(object):
 
         return list(chain.from_iterable(in_list))
 
+    @property
+    def root(self):
+        """
+        Get the root container
+
+        Returns
+          Container: the top most level container
+        """
+
+        if self.parent is None:
+            return self
+        else:
+            return self.parent.root
+
 
 
 

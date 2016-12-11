@@ -76,6 +76,8 @@ def test_deep_container():
     assert len(L[0].flatten()) == N + 1
     assert L[-1].depth == N
 
+    assert L[-1].root == L[0]
+
 
 def test_unique():
     assert unique((1, 2, 3, 1, 2, 3)) ==  [1, 2, 3]
