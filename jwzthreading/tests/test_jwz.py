@@ -274,3 +274,11 @@ def test_thread_two_missing_parent():
     assert d[0].message == None
     assert len(d[0].children) == 2
     assert d[0].children[0].message == m1
+    assert d[0].size == 3
+
+    # check that collapsing the empty container works
+    container = d[0].collapse_empty()
+    assert container.size == 2
+    assert container.message is not None
+    assert container.message.message_id == 'First'
+    assert container.parent is None

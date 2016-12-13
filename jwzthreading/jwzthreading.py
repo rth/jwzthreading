@@ -157,26 +157,73 @@ class Container(object):
         else:
             return self.parent.root
 
+    def collapse_empty(self, inplace=True):
+        """ Collapse empty top level containers.
 
-    def to_dict(self, include_subject=False):
+        If multiple messages reference a non existing top level message,
+        by default JWZ threading algorithm will create a en empty top level
+        container to be used as the root node.
+
+        This method removes this empty container and makes the first child
+        to be the root message. The other messages at depth == 1 then become 
+        it's children.
+
+        Parameters
+        ----------
+
+        inplace : bool, default=True
+           if True the original container is modified
+        """
+
+        if not inplace:
+            raise NotImplementedError
+
+
+        if self.message is not None:
+            # nothing to be done
+            return self
+
+        if any([el.message is None for el in self.children]):
+            raise ValueError('Children containers cannot be empty!')
+
+        # In the following, self.message is None
+
+        # make the 1st children the new root container
+        children = self.children
+
+        new_root = children[0]
+        new_root.parent = None
+
+        for idx in range(1, len(children)):
+            child = children[idx]
+            child.parent = new_root
+            new_root.children.append(child)
+
+        return new_root
+
+
+    def to_dict(self, include=[]):
         """ Convert a Container tree to a nested dict """
         if self.message is None:
             raise ValueError('Containers with None messages are not supported!')
+            raise ValueError('Containers with None messages are not supported:!\n'\
+                             '    this: {}'.format(self))
 
         res =  {'id': self.message.message_idx}
 
-        if include_subject:
-            res['subject'] =  self.message.subject
+        for key in include:
+            res[key] =  getattr(self.message, key)
 
         if self.parent is not None:
             if self.parent.message is not None:
                 res['parent'] = self.parent.message.message_idx
             else:
-                raise ValueError('Containers with None messages are not supported!')
+                raise ValueError('Containers with None messages are not supported:!\n'\
+                                 '    this: {}\n    parent: {}'.format(self, self.parent))
         else:
             res['parent'] = None
 
-        res['children'] = [el.to_dict() for el in self.children]
+        res['children'] = [el.to_dict(include=include) for el in self.children]
 
         return res
 

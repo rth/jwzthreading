@@ -58,7 +58,7 @@ def test_mailbox_delimiter():
         assert re.match(MAILBOX_DELIMITER, line)
 
 
-def test_fedora_June2010():
+def test_threading_fedora_June2010():
     """ Test threading on the fedora-devel mailing list data
     from June 2010"""
 
@@ -154,3 +154,43 @@ def test_fedora_June2010():
 
 
 
+def test_empty_collapsing_fedora_June2010():
+    """ Test threading on the fedora-devel mailing list data
+    from June 2010"""
+
+    try:
+        import lxml
+    except ImportError:
+        raise SkipTest
+
+    try:
+        import numpy as np
+        from numpy.testing import assert_array_equal
+        NUMPY_PRESENT = True
+    except ImportError:
+        NUMPY_PRESENT = False
+
+
+
+    msglist = parse_mailbox(os.path.join(DATA_DIR, '2010-January.txt.gz'),
+                         encoding='latin1', headersonly=True)
+
+    assert len(msglist) == N_EMAILS_JUNE2010
+
+
+    threads_ref = parse_mailman_htmlthread(os.path.join(DATA_DIR,
+                                      '2010-January_thread.html.gz'))
+    threads_ref = sort_threads(threads_ref, key='subject', missing='Z')
+
+
+    threads = thread([Message(el, message_idx=idx) for idx, el in enumerate(msglist)],
+                     group_by_subject=False)
+    # There is one single "empty root container"
+    assert sum([el.message is None for el in threads]) == 1
+
+    threads = [el.collapse_empty() for el in threads]
+
+    # The empty container was removed
+    assert sum([el.message is None for el in threads]) == 0
+
+    assert sum([el.parent is None for el in threads]) == len(threads)
