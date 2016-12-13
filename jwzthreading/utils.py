@@ -136,3 +136,52 @@ def parse_mailman_htmlthread(filename):
 
     return threads
 
+# Not used or extensively tested, comment out for now
+#
+#def flatten_tree(containers):
+#    """ Flatten a tree structure
+#
+#    Parameters
+#    ----------
+#    container : list
+#      a list of Containers
+#
+#    Returns
+#    -------
+#    tree : array
+#      an array with the parent id for each element
+#    root_id : array
+#      an array with the root id for each element
+#    """
+#    import numpy as np
+#    INT_NAN = -99999
+#
+#    N = sum([el.size for el in containers])
+#
+#    tree = np.ones(N, dtype='int')*INT_NAN
+#    root_id = np.ones(N, dtype='int')*INT_NAN
+#
+#    for root_container in containers:
+#        if root_container.message is not None:
+#            root_message_idx = root_container.message.message_idx
+#        elif root_container.children and \
+#            root_container.children[0].message is not None:
+#            root_message_idx = root_container.children[0].message.message_idx
+#        else:
+#            raise ValueError('Container {} has a None root and None first children.',
+#                   '\nThis should not be happening')
+#
+#        for cont in root_container.flatten():
+#            if cont.message is None:
+#                continue
+#            msg_idx = cont.message.message_idx
+#            root_id[msg_idx] = root_message_idx
+#
+#            if cont.parent is None:
+#                tree[msg_idx] = INT_NAN
+#            elif cont.parent.message is None:
+#                tree[msg_idx] = root_message_idx
+#            else:
+#                tree[msg_idx] = cont.parent.message.message_idx
+#
+#    return tree, root_id

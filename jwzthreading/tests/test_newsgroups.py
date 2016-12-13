@@ -109,7 +109,6 @@ def test_fedora_June2010():
     threads = [el for el in threads if el.message.message_idx not in [153, 285]]
 
 
-
     #n_ok = 0
 
     assert len(threads) == len(threads_ref) # we deleted one thread

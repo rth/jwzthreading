@@ -158,6 +158,29 @@ class Container(object):
             return self.parent.root
 
 
+    def to_dict(self, include_subject=False):
+        """ Convert a Container tree to a nested dict """
+        if self.message is None:
+            raise ValueError('Containers with None messages are not supported!')
+
+        res =  {'id': self.message.message_idx}
+
+        if include_subject:
+            res['subject'] =  self.message.subject
+
+        if self.parent is not None:
+            if self.parent.message is not None:
+                res['parent'] = self.parent.message.message_idx
+            else:
+                raise ValueError('Containers with None messages are not supported!')
+        else:
+            res['parent'] = None
+
+        res['children'] = [el.to_dict() for el in self.children]
+
+        return res
+
+
 
 
 class Message(object):
@@ -462,7 +485,6 @@ def print_container(ctr, depth=0, debug=0):
 
     for child in ctr.children:
         print_container(child, depth + 1, debug)
-        print_container(child, depth + 1)
 
 
 def main():

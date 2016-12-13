@@ -14,7 +14,8 @@ import pytest
 
 from jwzthreading import (Message, Container,
                           unique, prune_container,
-                          thread, sort_threads)
+                          thread, sort_threads,
+                          print_container)
 
 
 def test_container():
@@ -77,6 +78,7 @@ def test_deep_container():
     assert L[-1].depth == N
 
     assert L[-1].root == L[0]
+    
 
 
 def test_unique():
@@ -134,6 +136,43 @@ def test_prune_promote():
     c1.message = Message()
     p.add_child(c1)
     assert prune_container(p) == [c1]
+
+def test_to_dict():
+    text = [ """\
+       Subject: random
+       Message-ID: <message1>
+       References:
+
+       Body.""",
+       """\
+       Subject: Re: random
+       Message-ID: <message2>
+       References: <message1>
+
+       Body.""",
+
+       """\
+       Subject: Re: random
+       Message-ID: <message3>
+       References: <message1>
+
+       Body.""",
+    ]
+
+    msg = [message_from_string(textwrap.dedent(el)) for el in text]
+    msg = [Message(el, message_idx=idx) for idx, el in enumerate(msg)]
+
+    threads = thread(msg, group_by_subject=False)
+
+    tree_expected = {'id': 0, 'parent': None, 'children': [
+                        {'id': 1, 'parent': 0, 'children': []},
+                        {'id': 2, 'parent': 0, 'children': []},
+                        ]}
+
+    assert threads[0].to_dict() == tree_expected
+
+
+
 
 def test_sorting():
     """Thread two unconnected messages."""
